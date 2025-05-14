@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>SLOT 設定值檢查表</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    .menu { margin-bottom: 20px; }
+    .menu button { margin-right: 10px; padding: 10px 20px; }
+    #checklist, #signature-container, #saveBtn { display: none; margin-top: 20px; }
+    #signature { border: 1px solid #000; cursor: crosshair; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td {
+      border: 1px solid #999;
+      padding: 5px;
+      text-align: center;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="menu">
+    <button onclick="showChecklist('jumbo')">Jumbo Slot</button>
+    <button onclick="alert('尚未上傳 B Boy 資料')">B Boy</button>
+    <button onclick="alert('尚未上傳 D27 資料')">D27</button>
+    <button onclick="alert('尚未上傳 珍寶 資料')">珍寶</button>
+    <button onclick="alert('尚未上傳 S27 資料')">S27</button>
+  </div>
+
+  <div id="checklist"></div>
+
+  <div id="signature-container">
+    <p>請簽名：</p>
+    <canvas id="signature" width="400" height="150"></canvas>
+    <button onclick="clearSignature()">清除簽名</button>
+  </div>
+
+  <button id="saveBtn" onclick="savePDF()">儲存檔案</button>
+
+  <script>
+    const checklistData = `<table border="1" cellpadding="4" cellspacing="0" id="dataTable"><thead><tr><th>Group</th><th>Item</th><th>Value</th><th></th><th>現場設定值</th><th></th><th>機台是否<br/>有貼商檢</th><th></th><th>主板是否<br/>有貼軟貼</th></tr></thead><tbody><tr><td>Device Port</td><td>Ticket Printer Com Port</td><td>3、Enable</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>備註欄</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Bill Acceptor Com Port</td><td>4、Enable、OPTION</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>機台上線前確認</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>SAS Acceptor Com Port</td><td>2、Enable</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>龍虎榜加入</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Coin Acceptor Com Port</td><td>7、Disable</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>新會開贈加入</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Hopper Com Port</td><td>8、Disable</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>來客量報表</td><td><input type="checkbox"/></td><td></td></tr><tr><td>Serial Number Setting</td><td>Serial Number</td><td>參照機台銘板</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>回饋點數</td><td><input type="checkbox"/></td><td></td></tr><tr><td>Denom Setting</td><td>Account Unit Denom</td><td>0.05</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>摸彩卷</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Coin Denom</td><td>10</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>服務鈴測試</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Play Denom</td><td>0.1，0.25，0.5，1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>投退測試</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Dfalt denom</td><td>1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>Limit Setting</td><td>Credit Limit</td><td>10000000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>※請確實核對設定值，如有內容不符或新增內容請於備註欄詳填。
+※本次修改設定值機台請填入備註欄。
+※改版完成請確實檢查機台音量、按鍵功能測試、投退票測試
+※有換遊戲或更換主板、須確實檢查商檢軟貼是否與證書一致或移至新的主板上。
+
+
+</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Acceptor Limit</td><td>10000000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Jackpot Limit</td><td>10000000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>CashOut Limit</td><td>10000000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Hopper Limit</td><td>3000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Game Win Limit Lock</td><td>20000000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Bonus Win Limit Machine Lock</td><td>20000000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Bill in Limit</td><td>1000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Transfer Limit</td><td>0</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>Pay table setting</td><td>0.9637</td><td>0.1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>0.9637</td><td>0.25</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>0.9637</td><td>0.5</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>0.9637</td><td>1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>Max Bet Limit Setting</td><td>依遊戲預設最大值</td><td></td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>Button Panel Setting</td><td>請參閱機台設定表</td><td></td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>SAS Setting</td><td>Address No.</td><td>1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Asset No.</td><td>(依照機台設定表)</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Handpay Validation</td><td>YES</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>SAS Connection Check</td><td>No</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Bonus System</td><td>Legacy Bonus</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Cash Out Validation</td><td>ENHANCE</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>AFT Trans</td><td>No</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>Currency Setting</td><td>Currency Setting</td><td>1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>Min BET Limit</td><td>Min BET Limit</td><td>Enable</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Play Denom</td><td>0.1，0.25，0.5，1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Min Line Of Denom</td><td>25，25，25，25</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Min Bet Of Denom</td><td>1，1，1，1</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>GameInterface Setting
+(一卡通版本)</td><td>REWARD Method</td><td>event trigger</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>MAXBET</td><td>200000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>GameInterface Setting
+(ECR-107232以上版本)</td><td>REWARD Method</td><td>event trigger</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Max Bet </td><td>600000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Max Point</td><td>15000</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td>GI 相關設定</td><td>GI 中文化</td><td>CHS</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>拔卡優化</td><td>Logoutprocessing:開</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>無卡化登入</td><td>Tap login</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>Log 壓縮時間(Times)</td><td>龍易發:3</td><td>非龍易發:6</td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>GI版本</td><td></td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>是否要顯示客製化點數</td><td>Custom Promo:打勾顯示</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>龍虎榜過濾器(Jackpot Filter)</td><td>所有機種:mystery(Config WK檢查)</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td>主管簽名</td><td><input type="checkbox"/></td><td></td></tr><tr><td></td><td>使用泥馬卷遊戲是否有回饋</td><td>Show Restricted : 打勾無回饋</td><td></td><td><input style="width:100%;border:none;text-align:center;" type="text" value=""/></td><td><input type="checkbox"/></td><td></td><td><input type="checkbox"/></td><td></td></tr></tbody></table>`;
+
+    function showChecklist(type) {
+      if (type === 'jumbo') {
+        document.getElementById('checklist').innerHTML = checklistData;
+        document.getElementById('checklist').style.display = 'block';
+        document.getElementById('signature-container').style.display = 'block';
+        document.getElementById('saveBtn').style.display = 'inline-block';
+      }
+    }
+
+    const canvas = document.getElementById('signature');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mouseleave', () => drawing = false);
+    canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  drawing = true;
+});
+
+canvas.addEventListener('touchmove', draw);
+
+canvas.addEventListener('touchend', function() {
+  drawing = false;
+});
+
+
+    function draw(e) {
+      if (!drawing) return;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function savePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+
+  html2canvas(document.querySelector("#checklist")).then(canvas => {
+    const imgData = canvas.toDataURL("image/png");
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+    doc.addPage();
+    const signatureImage = document.getElementById("signature").toDataURL("image/png");
+    doc.text("主管簽名", 10, 10);
+    doc.addImage(signatureImage, 'PNG', 10, 20, 100, 50);
+
+    doc.save('Jumbo_Slot_檢查表.pdf');
+  });
+}
+
+
+  </script>
+</body>
+</html>
