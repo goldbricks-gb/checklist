@@ -27,21 +27,13 @@
   <div id="machineTitle"></div>
   <iframe id="previewFrame" width="100%" height="1200px" style="border:1px solid #aaa;"></iframe>
 
-  <div id="signature-container">
-    <p>請簽名：</p>
-    <canvas id="signature" width="400" height="150"></canvas>
-    <br>
-    <button onclick="clearSignature()">清除簽名</button>
-  </div>
 
-  <br>
-  <button onclick="savePDF()">儲存 PDF</button>
 
 <script>
   function loadHtml(name) {
     const map = {
-      "Jumbo Slot": "static/Jumbo Slot.htm",
-      "B Boy": "",
+  "Jumbo Slot": "static/Jumbo Slot.files/sheet001.htm",  // ✅ 正確可擷取的頁面
+      "B Boy": "static/B Boy.files/sheet001.htm",
       "D27": "",
       "珍寶": "",
       "S27": ""
@@ -81,26 +73,45 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
+  
   async function savePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const iframeDoc = document.getElementById("previewFrame").contentDocument || document.getElementById("previewFrame").contentWindow.document;
-    const iframeBody = iframeDoc.body;
+    try {
+      const iframe = document.getElementById("previewFrame");
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
-    const canvasMain = await html2canvas(iframeBody);
-    const imgData = canvasMain.toDataURL("image/png");
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = (canvasMain.height * pdfWidth) / canvasMain.width;
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      let printable = document.getElementById("printable");
+      if (printable) printable.remove();
 
-    doc.addPage();
-    const signImg = canvas.toDataURL("image/png");
-    doc.text("簽名：", 10, 10);
-    doc.addImage(signImg, "PNG", 10, 20, 120, 60);
+      printable = document.createElement("div");
+      printable.id = "printable";
+      printable.style.position = "absolute";
+      printable.style.left = "-9999px";
+      printable.innerHTML = iframeDoc.body.innerHTML;
+      document.body.appendChild(printable);
 
-    doc.save("設定檢查表.pdf");
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const canvasMain = await html2canvas(printable);
+      const imgData = canvasMain.toDataURL("image/png");
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = (canvasMain.height * pdfWidth) / canvasMain.width;
+      doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+      doc.addPage();
+      const signatureCanvas = document.getElementById("signature");
+      const signatureImage = signatureCanvas.toDataURL("image/png");
+      doc.text("簽名：", 10, 10);
+      doc.addImage(signatureImage, "PNG", 10, 20, 120, 60);
+
+      doc.save("設定檢查表.pdf");
+      printable.remove();
+    } catch (err) {
+      alert("PDF 產生失敗：" + err.message);
+    }
   }
+
 </script>
 </body>
 </html>
